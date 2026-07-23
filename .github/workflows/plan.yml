@@ -1,0 +1,23 @@
+name: Terraform Plan
+on:
+  pull_request:
+    branches: [main, homolog]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [homolog, prod]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+      - name: Format check
+        run: terraform fmt -check -recursive
+      - name: Validate ${{ matrix.env }}
+        run: |
+          cd envs/${{ matrix.env }}
+          terraform init -backend=false
+          terraform validate
