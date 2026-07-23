@@ -1,0 +1,138 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ai-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      models: read
+
+    steps:
+      - name: AI Code Review
+        uses: actions/github-script@v7
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const MAX_DIFF_LENGTH = 12000;
+
+            // Busca os arquivos alterados no PR
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const diffContent = files
+              .filter(f => f.patch && f.status !== 'removed')
+              .map(f => `### ${f.filename}\n\`\`\`diff\n${f.patch}\n\`\`\``)
+              .join('\n\n');
+
+            if (!diffContent.trim()) {
+              console.log('Nenhuma alteração de código para revisar.');
+              return;
+            }
+
+            const truncatedDiff = diffContent.length > MAX_DIFF_LENGTH
+              ? diffContent.slice(0, MAX_DIFF_LENGTH) + '\n\n*(diff truncado por tamanho)*'
+              : diffContent;
+
+            // Chama a API do GitHub Models
+            const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.GH_TOKEN}`,
+              },
+              body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                  {
+                    role: 'system',
+                    content: `Você é um revisor de código experiente em Terraform, AWS e infraestrutura como código (IaC). Revise o diff do PR abaixo e forneça feedback construtivo em Português (Brasil).
+
+                    Regras obrigatórias:
+                    - Cite APENAS os tópicos onde houver problemas reais. Se um tópico não tiver nenhum problema, ignore-o completamente.
+                    - NÃO escreva frases do tipo "não se aplica" ou "nenhum problema encontrado neste tópico". Simplesmente não mencione o tópico.
+                    - Se não houver NENHUM problema em nenhum tópico, responda apenas com: "✅ Esse PR não contém nenhum ponto de atenção relevante. Ótima implementação!"
+                    - Seja direto e objetivo. Não faça elogios desnecessários nem preencha a resposta com texto vazio.
+
+                    Tópicos a avaliar (somente se houver problemas):
+
+                    **1. Segurança (AWS)**
+                    - Algum recurso está sendo exposto publicamente sem necessidade (ex: RDS em subnet pública, Security Group liberando 0.0.0.0/0 em portas sensíveis)?
+                    - Segredos, senhas ou chaves aparecem em texto plano no código (em vez de Secrets Manager/SSM)?
+                    - Criptografia em repouso (storage_encrypted) está habilitada onde deveria?
+                    - IAM: alguma role/policy com permissões amplas demais (ex: "*:*")?
+
+                    **2. Boas práticas de Terraform**
+                    - Uso correto de variables.tf, outputs.tf e módulos (evitar hardcode de valores que deveriam ser variáveis)?
+                    - Nomenclatura e tags consistentes entre recursos?
+                    - Uso de módulos comunitários maduros em vez de reescrever recursos complexos (ex: VPC) do zero?
+                    - versões de provider/módulo fixadas adequadamente (~>)?
+
+                    **3. Consistência com a arquitetura do projeto**
+                    - O código respeita a separação entre modules/ (reutilizável) e envs/ (configuração por ambiente)?
+                    - Contratos publicados (Parameter Store / Secrets Manager) seguem o padrão de nomenclatura já estabelecido (/oficina/{env}/...)?
+
+                    **4. Restrições do ambiente AWS Academy**
+                    - O código tenta criar IAM roles novas (não permitido — só LabRole/LabInstanceProfile/LabEksClusterRole)?
+                    - Tenta usar RDS Multi-AZ ou instance types fora de db.t3.micro (não permitido no Academy)?
+
+                    **5. Possíveis bugs**
+                    - Erros de sintaxe HCL, referências quebradas entre módulos, dependências implícitas não declaradas (depends_on faltando)?`,
+                  },
+                  {
+                    role: 'user',
+                    content: `Revise este pull request:\n\n${truncatedDiff}`,
+                  },
+                ],
+                max_tokens: 1500,
+                temperature: 0.3,
+              }),
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              core.setFailed(`Erro na API do GitHub Models: ${response.status} - ${errorText}`);
+              return;
+            }
+
+            const data = await response.json();
+            const review = data.choices?.[0]?.message?.content;
+
+            if (!review) {
+              core.warning('Nenhuma revisão foi gerada.');
+              return;
+            }
+
+            // Remove comentários anteriores deste bot para não poluir o PR
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+
+            for (const comment of comments) {
+              if (comment.body?.startsWith('## 🤖 AI Code Review')) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                });
+              }
+            }
+
+            // Posta o novo comentário de revisão
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body: `## 🤖 AI Code Review\n\n${review}\n\n---\n*Revisão gerada automaticamente via [GitHub Models](https://github.com/marketplace/models) (GPT-4o mini) — não substitui a revisão humana.*`,
+            });
