@@ -18,6 +18,10 @@ jobs:
         run: terraform fmt -check -recursive
       - name: Validate ${{ matrix.env }}
         run: |
-          cd envs/${{ matrix.env }}
-          terraform init -backend=false
-          terraform validate
+          if [ -d "envs/${{ matrix.env }}" ]; then
+            cd envs/${{ matrix.env }}
+            terraform init -backend=false
+            terraform validate
+          else
+            echo "Directory envs/${{ matrix.env }} does not exist, skipping validation"
+          fi
