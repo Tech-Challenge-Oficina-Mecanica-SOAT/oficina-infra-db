@@ -1,12 +1,11 @@
 terraform {
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+    aws = { source = "hashicorp/aws", version = ">= 5.70, < 7.0" }
   }
 }
 
 module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.5"
+  source  = "./vendor/terraform-aws-vpc"
 
   name = "oficina-vpc-${var.environment}"
   cidr = "10.0.0.0/16"
