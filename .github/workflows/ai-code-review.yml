@@ -22,6 +22,15 @@ jobs:
           script: |
             const MAX_DIFF_LENGTH = 12000;
 
+            // Valida se o token está disponível
+            const token = process.env.GH_TOKEN;
+            if (!token) {
+              core.setFailed('❌ GH_TOKEN não está configurado. Verifique as variáveis de ambiente.');
+              return;
+            }
+
+            console.log('🔍 Buscando arquivos alterados no PR...');
+
             // Busca os arquivos alterados no PR
             const { data: files } = await github.rest.pulls.listFiles({
               owner: context.repo.owner,
@@ -35,20 +44,24 @@ jobs:
               .join('\n\n');
 
             if (!diffContent.trim()) {
-              console.log('Nenhuma alteração de código para revisar.');
+              console.log('ℹ️ Nenhuma alteração de código para revisar.');
               return;
             }
+
+            console.log(`📝 Diff gerado com ${diffContent.length} caracteres`);
 
             const truncatedDiff = diffContent.length > MAX_DIFF_LENGTH
               ? diffContent.slice(0, MAX_DIFF_LENGTH) + '\n\n*(diff truncado por tamanho)*'
               : diffContent;
+
+            console.log('🤖 Enviando para revisão via GitHub Models...');
 
             // Chama a API do GitHub Models
             const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.GH_TOKEN}`,
+                'Authorization': `Bearer ${token}`,
               },
               body: JSON.stringify({
                 model: 'gpt-4o-mini',
@@ -100,7 +113,17 @@ jobs:
 
             if (!response.ok) {
               const errorText = await response.text();
-              core.setFailed(`Erro na API do GitHub Models: ${response.status} - ${errorText}`);
+              
+              // Tratamento específico para diferentes erros
+              if (response.status === 401) {
+                core.setFailed(`❌ Erro de autenticação (401): Token inválido ou sem permissões. Verifique se o GH_TOKEN tem acesso ao GitHub Models.\nDetalhes: ${errorText}`);
+              } else if (response.status === 403) {
+                core.setFailed(`❌ Erro de permissão (403): O token não tem permissão para acessar o GitHub Models. Verifique as permissões 'models: read'.\nDetalhes: ${errorText}`);
+              } else if (response.status === 429) {
+                core.setFailed(`❌ Rate limit excedido (429): Muitas requisições. Aguarde antes de tentar novamente.\nDetalhes: ${errorText}`);
+              } else {
+                core.setFailed(`❌ Erro na API do GitHub Models: ${response.status} - ${errorText}`);
+              }
               return;
             }
 
@@ -108,9 +131,11 @@ jobs:
             const review = data.choices?.[0]?.message?.content;
 
             if (!review) {
-              core.warning('Nenhuma revisão foi gerada.');
+              core.warning('⚠️ Nenhuma revisão foi gerada pela IA.');
               return;
             }
+
+            console.log('✅ Revisão gerada com sucesso!');
 
             // Remove comentários anteriores deste bot para não poluir o PR
             const { data: comments } = await github.rest.issues.listComments({
@@ -119,6 +144,7 @@ jobs:
               issue_number: context.payload.pull_request.number,
             });
 
+            let deletedCount = 0;
             for (const comment of comments) {
               if (comment.body?.startsWith('## 🤖 AI Code Review')) {
                 await github.rest.issues.deleteComment({
@@ -126,7 +152,12 @@ jobs:
                   repo: context.repo.repo,
                   comment_id: comment.id,
                 });
+                deletedCount++;
               }
+            }
+
+            if (deletedCount > 0) {
+              console.log(`🗑️ Removidos ${deletedCount} comentários anteriores`);
             }
 
             // Posta o novo comentário de revisão
@@ -136,3 +167,5 @@ jobs:
               issue_number: context.payload.pull_request.number,
               body: `## 🤖 AI Code Review\n\n${review}\n\n---\n*Revisão gerada automaticamente via [GitHub Models](https://github.com/marketplace/models) (GPT-4o mini) — não substitui a revisão humana.*`,
             });
+
+            console.log('✅ Comentário de revisão postado com sucesso!`);
