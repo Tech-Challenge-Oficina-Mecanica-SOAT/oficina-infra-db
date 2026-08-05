@@ -45,6 +45,7 @@ aws ssm get-parameter --name "/oficina/homolog/db/endpoint" --query Parameter.Va
 - Documentação de arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - O repositório entrega VPC compartilhada, RDS PostgreSQL em subnets privadas, e Secrets Manager para credenciais de banco e JWT.
 - Use `terraform init` dentro de `envs/homolog` ou `envs/prod` antes de `plan` ou `apply`.
+- Os ambientes usam backend remoto S3/DynamoDB para manter o estado entre execuções de CI.
 
 ## **Envs examples**
 - Cada ambiente contém um arquivo `terraform.tfvars.example` com placeholders: [envs/homolog/terraform.tfvars.example](envs/homolog/terraform.tfvars.example#L1) e [envs/prod/terraform.tfvars.example](envs/prod/terraform.tfvars.example#L1).
