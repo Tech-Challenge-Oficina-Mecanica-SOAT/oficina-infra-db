@@ -57,7 +57,7 @@ jobs:
             console.log('🤖 Enviando para revisão via GitHub Models...');
 
             // Chama a API do GitHub Models
-            const response = await fetch('https://models.inference.ai.azure.com/chat/completions', {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
