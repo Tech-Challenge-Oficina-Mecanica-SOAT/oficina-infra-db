@@ -5,7 +5,8 @@ resource "random_password" "db_password" {
 }
 
 resource "aws_secretsmanager_secret" "db_password" {
-  name = "/oficina/${var.environment}/db-password"
+  name                    = "/oficina/${var.environment}/db-password"
+  recovery_window_in_days = 0
 
   tags = {
     Project     = "oficina-mecanica"
@@ -26,7 +27,8 @@ resource "random_password" "jwt_secret" {
 }
 
 resource "aws_secretsmanager_secret" "jwt_secret" {
-  name = "/oficina/${var.environment}/jwt-secret-key"
+  name                    = "/oficina/${var.environment}/jwt-secret-key"
+  recovery_window_in_days = 0
 
   tags = {
     Project     = "oficina-mecanica"
