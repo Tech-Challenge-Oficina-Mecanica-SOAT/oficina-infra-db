@@ -37,9 +37,15 @@ aws ssm get-parameter --name "/oficina/homolog/db/endpoint" --query Parameter.Va
 - **Apply (manual):** Vá em `Actions → Terraform Apply` e escolha `Run workflow`. Garanta que os secrets AWS estejam válidos no momento de execução.
 
 ### **Run migrations via Actions (opcional)**
-- Existe um workflow manual [`.github/workflows/migrations.yml`](.github/workflows/migrations.yml#L1) que executa o script `migrations/run-migrations.sh` em um runner. Para usá-lo configure os mesmos secrets AWS do `apply` e garanta que o runner tenha permissão para acessar o repositório `../oficina-mecanica-api` relativo ao checkout (pode precisar ajustar o caminho se o repositório não estiver presente no runner).
+- Existe um workflow manual [`.github/workflows/migrations.yml`](.github/workflows/migrations.yml#L1) que executa o script `migrations/run-migrations.sh` em um runner. Para usá-lo configure os mesmos secrets AWS do `apply` e garanta que o runner tenha permissão para acessar o repositório `../oficina-mecanica-api` relativo ao checkout.
 
 **Atenção:** O runner precisa do `dotnet SDK` e as credenciais AWS válidas (expiram em 4h). Recomendo usar este workflow apenas se você aceitar o risco da expiração; caso contrário, rode migrations localmente.
+
+## **Architecture**
+- Documentação de arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+- O repositório entrega VPC compartilhada, RDS PostgreSQL em subnets privadas, e Secrets Manager para credenciais de banco e JWT.
+- Use `terraform init` dentro de `envs/homolog` ou `envs/prod` antes de `plan` ou `apply`.
+- Os ambientes usam backend remoto S3/DynamoDB para manter o estado entre execuções de CI.
 
 ## **Envs examples**
 - Cada ambiente contém um arquivo `terraform.tfvars.example` com placeholders: [envs/homolog/terraform.tfvars.example](envs/homolog/terraform.tfvars.example#L1) e [envs/prod/terraform.tfvars.example](envs/prod/terraform.tfvars.example#L1).

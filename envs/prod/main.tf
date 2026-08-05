@@ -7,22 +7,22 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = var.aws_region
 }
 
 module "vpc" {
   source      = "../../modules/vpc"
-  environment = "prod"
+  environment = var.environment
 }
 
 module "secrets" {
   source      = "../../modules/secrets"
-  environment = "prod"
+  environment = var.environment
 }
 
 module "rds" {
   source              = "../../modules/rds"
-  environment         = "prod"
+  environment         = var.environment
   vpc_id              = module.vpc.vpc_id
   private_subnet_ids  = module.vpc.private_subnets
   db_password         = module.secrets.db_password_value
