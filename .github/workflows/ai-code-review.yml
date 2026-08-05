@@ -168,4 +168,4 @@ jobs:
               body: `## 🤖 AI Code Review\n\n${review}\n\n---\n*Revisão gerada automaticamente via [GitHub Models](https://github.com/marketplace/models) (GPT-4o mini) — não substitui a revisão humana.*`,
             });
 
-            console.log('✅ Comentário de revisão postado com sucesso!`);
+            console.log('✅ Comentário de revisão postado com sucesso!');
