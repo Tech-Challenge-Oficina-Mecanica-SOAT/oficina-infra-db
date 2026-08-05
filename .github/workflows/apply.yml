@@ -1,34 +1,46 @@
-name: Terraform Apply (manual)
+name: Terraform Apply
+
 on:
+  push:
+    branches: [ main, master ]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Ambiente'
-        required: true
-        default: 'homolog'
-        type: choice
-        options: [homolog, prod]
 
 jobs:
-  apply:
+  terraform-apply:
+    name: Terraform Apply
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.0
-      - name: Configure AWS
+          terraform_version: 1.5.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
         run: |
-          mkdir -p ~/.aws
-          cat > ~/.aws/credentials << EOF
-          [default]
-          aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}
-          EOF
-      - name: Apply
+          terraform plan -out=tfplan
+        continue-on-error: false
+
+      - name: Terraform Apply
         run: |
-          cd envs/${{ inputs.environment }}
-          terraform init
-          terraform apply -auto-approve
+          terraform apply -auto-approve tfplan
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'

@@ -1,38 +1,83 @@
-name: Run Migrations (manual)
+name: Run Database Migrations
+
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Execução manual
     inputs:
       environment:
-        description: 'Ambiente (homolog|prod)'
+        description: 'Ambiente para aplicar migrations'
         required: true
         default: 'homolog'
         type: choice
-        options: [homolog, prod]
+        options:
+          - homolog
+          - prod
+  push:
+    paths:
+      - 'migrations/**'  # Roda quando mudar as migrations
+      - 'migrations/run-migrations.sh'
+    branches:
+      - main
+      - master
+      - develop
 
 jobs:
   migrations:
+    name: Run Migrations
     runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write
+      contents: read
+    
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '8.x'
-      - name: Configure AWS credentials
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-        run: |
-          mkdir -p ~/.aws
-          cat > ~/.aws/credentials << EOF
-          [default]
-          aws_access_key_id=${AWS_ACCESS_KEY_ID}
-          aws_secret_access_key=${AWS_SECRET_ACCESS_KEY}
-          aws_session_token=${AWS_SESSION_TOKEN}
-          EOF
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Run migrations script
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Checkout API repository
+        uses: actions/checkout@v4
+        with:
+          repository: seu-usuario/oficina-mecanica-api
+          path: ../oficina-mecanica-api
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Restore dependencies
+        run: |
+          cd ../oficina-mecanica-api
+          dotnet restore src/OficinaMecanica.Infrastructure/OficinaMecanica.Infrastructure.csproj
+
+      - name: Run migrations
+        env:
+          ENVIRONMENT: ${{ github.event.inputs.environment || 'homolog' }}
         run: |
           chmod +x migrations/run-migrations.sh
-          ./migrations/run-migrations.sh ${{ inputs.environment }} ../oficina-mecanica-api
+          ./migrations/run-migrations.sh $ENVIRONMENT ../oficina-mecanica-api
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const message = `❌ **Falha nas migrations!** 
+            
+            Ambiente: ${{ github.event.inputs.environment || 'homolog' }}
+            
+            Verifique os logs para mais detalhes.`;
+            
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request?.number || 1,
+              body: message
+            });
