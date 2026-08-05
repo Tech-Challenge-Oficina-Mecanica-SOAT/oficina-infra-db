@@ -251,7 +251,7 @@ resource "random_password" "db" {
 resource "aws_secretsmanager_secret" "db_password" {
   name                    = "oficina/${var.environment}/db-password"
   description             = "Senha RDS PostgreSQL - ${var.environment}"
-  recovery_window_in_days = 0  # ambiente acadêmico permite destroy imediato
+  recovery_window_in_days = 30  # ambiente acadêmico permite destroy imediato
 
   tags = {
     Project     = "oficina-mecanica"
@@ -272,7 +272,7 @@ resource "random_password" "jwt" {
 resource "aws_secretsmanager_secret" "jwt_key" {
   name                    = "oficina/${var.environment}/jwt-secret-key"
   description             = "JWT SecretKey compartilhada entre Lambda auth-cpf e API principal"
-  recovery_window_in_days = 0
+  recovery_window_in_days = 30
 }
 
 resource "aws_secretsmanager_secret_version" "jwt_key" {
