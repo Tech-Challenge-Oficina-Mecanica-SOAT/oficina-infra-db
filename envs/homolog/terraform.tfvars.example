@@ -1,0 +1,9 @@
+# Example terraform variables for homolog environment
+# Copy to terraform.tfvars and adjust values when needed.
+
+# No required variables for this repo by default. Use this file to document
+# environment-specific overrides if you add variables later.
+
+# Example placeholders:
+# aws_region = "us-east-1"
+# environment = "homolog"

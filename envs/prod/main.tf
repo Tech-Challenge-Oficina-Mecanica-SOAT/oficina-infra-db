@@ -12,17 +12,17 @@ provider "aws" {
 
 module "vpc" {
   source      = "../../modules/vpc"
-  environment = "homolog"
+  environment = "prod"
 }
 
 module "secrets" {
   source      = "../../modules/secrets"
-  environment = "homolog"
+  environment = "prod"
 }
 
 module "rds" {
   source              = "../../modules/rds"
-  environment         = "homolog"
+  environment         = "prod"
   vpc_id              = module.vpc.vpc_id
   private_subnet_ids  = module.vpc.private_subnets
   db_password         = module.secrets.db_password_value
