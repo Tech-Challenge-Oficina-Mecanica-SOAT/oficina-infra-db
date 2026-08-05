@@ -43,7 +43,7 @@ jobs:
               : diffContent;
 
             // NOVO: Endpoint correto do GitHub Models
-            const response = await fetch('https://models.inference.ai.azure.com/v1/chat/completions', {
+            const response = await fetch('https://models.github.ai/catalog/models', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
