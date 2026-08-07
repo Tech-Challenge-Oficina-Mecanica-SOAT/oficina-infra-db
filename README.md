@@ -3,7 +3,7 @@
 > Repositório de infraestrutura base (VPC + RDS + Secrets Manager) da oficina mecânica.
 
 ## **Purpose**
-- **Repo:** : fornece VPC, RDS PostgreSQL e Secrets Manager para o conjunto de repositórios da oficina.
+- **Repo:** fornece VPC, RDS PostgreSQL e Secrets Manager para o conjunto de repositórios da oficina.
 
 ## **Prerequisites**
 - **AWS CLI:** instalado e configurado para `us-east-1` (AWS Academy Lab).

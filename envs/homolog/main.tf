@@ -26,11 +26,11 @@ module "secrets" {
 }
 
 module "rds" {
-  source              = "../../modules/rds"
-  environment         = var.environment
-  vpc_id              = module.vpc.vpc_id
-  private_subnet_ids  = module.vpc.private_subnets
-  db_password         = module.secrets.db_password_value
+  source             = "../../modules/rds"
+  environment        = var.environment
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnets
+  db_password        = module.secrets.db_password_value
 
   depends_on = [module.vpc, module.secrets]
 }
