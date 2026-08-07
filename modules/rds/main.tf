@@ -42,25 +42,29 @@ resource "aws_db_subnet_group" "this" {
 resource "aws_db_instance" "postgres" {
   identifier     = "oficina-db-${var.environment}"
   engine         = "postgres"
-  engine_version = "15"
+  engine_version = "15.7"
   instance_class = "db.t3.micro"
 
-  allocated_storage = 20
-  storage_type      = "gp2"
-  storage_encrypted = true
+  allocated_storage     = 20
+  max_allocated_storage = 20
+  storage_type          = "gp2"
+  storage_encrypted     = true
 
-  db_name  = "oficina"
+  db_name  = "oficina_mecanica"
   username = "oficina_admin"
   password = var.db_password
 
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [aws_security_group.rds.id]
 
-  multi_az                = false
-  publicly_accessible     = false
-  backup_retention_period = 1
-  skip_final_snapshot     = true
-  apply_immediately       = true
+  multi_az                     = false
+  publicly_accessible          = false
+  backup_retention_period      = 1
+  monitoring_interval          = 0
+  performance_insights_enabled = false
+  deletion_protection          = false
+  skip_final_snapshot          = true
+  apply_immediately            = true
 
   tags = {
     Project     = "oficina-mecanica"
@@ -72,36 +76,36 @@ resource "aws_db_instance" "postgres" {
 }
 
 resource "aws_ssm_parameter" "db_endpoint" {
-  name  = "/oficina/${var.environment}/db/endpoint"
-  type  = "String"
-  value = aws_db_instance.postgres.address
+  name      = "/oficina/${var.environment}/db/endpoint"
+  type      = "String"
+  value     = aws_db_instance.postgres.address
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "db_port" {
-  name  = "/oficina/${var.environment}/db/port"
-  type  = "String"
-  value = tostring(aws_db_instance.postgres.port)
+  name      = "/oficina/${var.environment}/db/port"
+  type      = "String"
+  value     = tostring(aws_db_instance.postgres.port)
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "db_name" {
-  name  = "/oficina/${var.environment}/db/name"
-  type  = "String"
-  value = aws_db_instance.postgres.db_name
+  name      = "/oficina/${var.environment}/db/name"
+  type      = "String"
+  value     = aws_db_instance.postgres.db_name
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "db_username" {
-  name  = "/oficina/${var.environment}/db/username"
-  type  = "String"
-  value = aws_db_instance.postgres.username
+  name      = "/oficina/${var.environment}/db/username"
+  type      = "String"
+  value     = aws_db_instance.postgres.username
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "db_security_group_id" {
-  name  = "/oficina/${var.environment}/db/security-group-id"
-  type  = "String"
-  value = aws_security_group.rds.id
+  name      = "/oficina/${var.environment}/db/security-group-id"
+  type      = "String"
+  value     = aws_security_group.rds.id
   overwrite = true
 }
