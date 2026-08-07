@@ -48,7 +48,8 @@ jobs:
       - name: Checkout API repository
         uses: actions/checkout@v4
         with:
-          repository: seu-usuario/oficina-mecanica-api
+          # Ajuste para o nome real da org/repo caso seja diferente
+          repository: Tech-Challenge-Oficina-Mecanica-SOAT/oficina-mecanica-api
           path: ../oficina-mecanica-api
           token: ${{ secrets.GITHUB_TOKEN }}
 

@@ -41,6 +41,56 @@ aws ssm get-parameter --name "/oficina/homolog/db/endpoint" --query Parameter.Va
 
 **Atenção:** O runner precisa do `dotnet SDK` e as credenciais AWS válidas (expiram em 4h). Recomendo usar este workflow apenas se você aceitar o risco da expiração; caso contrário, rode migrations localmente.
 
+## **Contratos publicados**
+
+Consumidos pelos outros repositórios do grupo (`oficina-infra-k8s` para a VPC, `oficina-mecanica-api` e `oficina-lambda-auth` para o DB e o JWT):
+
+**Parameter Store** (`{env}` = `homolog` ou `prod`):
+```
+/oficina/{env}/network/vpc-id
+/oficina/{env}/network/vpc-cidr
+/oficina/{env}/network/public-subnet-ids
+/oficina/{env}/network/private-subnet-ids
+/oficina/{env}/db/endpoint
+/oficina/{env}/db/port
+/oficina/{env}/db/name
+/oficina/{env}/db/username
+/oficina/{env}/db/security-group-id
+```
+
+**Secrets Manager:**
+```
+oficina/{env}/db-password
+oficina/{env}/jwt-secret-key
+```
+
+## **Como fazer destroy (⚠️ importante para o budget)**
+
+O NAT Gateway continua sendo cobrado mesmo com a sessão do AWS Academy encerrada. Sempre que não for continuar no dia seguinte, rode:
+
+```bash
+cd envs/homolog   # ou envs/prod
+terraform destroy
+```
+
+Rotina recomendada por sessão de trabalho (~4h no Academy):
+1. Iniciar o Lab, renovar credenciais
+2. `terraform apply` no ambiente desejado
+3. Trabalhar/testar
+4. `terraform destroy` antes de encerrar, se não for continuar no mesmo dia
+
+Custo estimado por sessão de 4h com rotina disciplinada: ~US$0,25 (NAT Gateway + RDS). Ver `docs/plano-01-oficina-infra-db.md` para a estimativa completa de custo do projeto.
+
+## **Repositórios relacionados**
+
+Este repositório é infraestrutura base compartilhada e destrava os outros três repositórios do grupo:
+
+- [`oficina-mecanica-api`](../oficina-mecanica-api) — API .NET (dono: P1) — consome DB e JWT
+- [`oficina-lambda-auth`](../oficina-lambda-auth) — Lambda de autenticação por CPF (dono: P2) — consome JWT
+- [`oficina-infra-k8s`](../oficina-infra-k8s) — Cluster EKS e manifestos Kubernetes (dono: P3) — consome a VPC
+
+> Ajuste os links acima para as URLs reais do GitHub assim que os repositórios estiverem publicados.
+
 ## **Architecture**
 - Documentação de arquitetura em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - O repositório entrega VPC compartilhada, RDS PostgreSQL em subnets privadas, e Secrets Manager para credenciais de banco e JWT.

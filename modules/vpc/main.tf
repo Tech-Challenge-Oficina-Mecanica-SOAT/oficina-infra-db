@@ -38,29 +38,29 @@ module "vpc" {
 }
 
 resource "aws_ssm_parameter" "vpc_id" {
-  name  = "/oficina/${var.environment}/network/vpc-id"
-  type  = "String"
-  value = module.vpc.vpc_id
+  name      = "/oficina/${var.environment}/network/vpc-id"
+  type      = "String"
+  value     = module.vpc.vpc_id
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "vpc_cidr" {
-  name  = "/oficina/${var.environment}/network/vpc-cidr"
-  type  = "String"
-  value = module.vpc.vpc_cidr_block
+  name      = "/oficina/${var.environment}/network/vpc-cidr"
+  type      = "String"
+  value     = module.vpc.vpc_cidr_block
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "public_subnet_ids" {
-  name  = "/oficina/${var.environment}/network/public-subnet-ids"
-  type  = "StringList"
-  value = join(",", module.vpc.public_subnets)
+  name      = "/oficina/${var.environment}/network/public-subnet-ids"
+  type      = "StringList"
+  value     = join(",", module.vpc.public_subnets)
   overwrite = true
 }
 
 resource "aws_ssm_parameter" "private_subnet_ids" {
-  name  = "/oficina/${var.environment}/network/private-subnet-ids"
-  type  = "StringList"
-  value = join(",", module.vpc.private_subnets)
+  name      = "/oficina/${var.environment}/network/private-subnet-ids"
+  type      = "StringList"
+  value     = join(",", module.vpc.private_subnets)
   overwrite = true
 }

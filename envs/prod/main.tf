@@ -1,6 +1,11 @@
 terraform {
   required_version = ">= 1.9.0"
   required_providers {
+    # NOTA: o modulo VPC vendorizado em modules/vpc/vendor/terraform-aws-vpc
+    # esta na v6.x e exige aws provider >= 6.28. Por isso a constraint aqui
+    # e ">= 5.70, < 7.0" em vez do "~> 5.0" original do plano. Se o vendor
+    # for rebaixado para a v5.5.x planejada, esta constraint pode voltar
+    # para "~> 5.0".
     aws    = { source = "hashicorp/aws", version = ">= 5.70, < 7.0" }
     random = { source = "hashicorp/random", version = "~> 3.6" }
   }
