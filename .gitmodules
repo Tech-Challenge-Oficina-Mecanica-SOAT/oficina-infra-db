@@ -1,0 +1,4 @@
+[submodule "modules/vpc/vendor/terraform-aws-vpc"]
+	path = modules/vpc/vendor/terraform-aws-vpc
+	url = https://github.com/terraform-aws-modules/terraform-aws-vpc.git
+	branch = master

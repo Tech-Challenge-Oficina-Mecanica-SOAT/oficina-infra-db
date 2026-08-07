@@ -47,8 +47,8 @@ resource "aws_db_instance" "postgres" {
 
   allocated_storage     = 20
   max_allocated_storage = 20
-  storage_type           = "gp2"
-  storage_encrypted      = true
+  storage_type          = "gp2"
+  storage_encrypted     = true
 
   db_name  = "oficina_mecanica"
   username = "oficina_admin"
