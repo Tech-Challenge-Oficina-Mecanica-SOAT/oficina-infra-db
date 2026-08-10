@@ -1,0 +1,14 @@
+# Normaliza todos os arquivos de texto para LF, independente do sistema
+# operacional de quem estiver editando (Windows, Mac, Linux).
+* text=auto eol=lf
+
+# Garante explicitamente LF nos arquivos Terraform
+*.tf     text eol=lf
+*.tfvars text eol=lf
+
+# Scripts shell sempre em LF (CRLF quebra execução em runners Linux)
+*.sh     text eol=lf
+
+# Arquivos binários não devem ser tocados pelo Git
+*.png    binary
+*.pem    binary

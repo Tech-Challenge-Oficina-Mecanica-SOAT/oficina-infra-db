@@ -5,3 +5,4 @@
 *.tfvars
 !*.tfvars.example
 .terraformrc
+docs/
