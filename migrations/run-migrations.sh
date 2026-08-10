@@ -40,7 +40,7 @@ DB_ENDPOINT=$(get_ssm_parameter "/oficina/$ENV/db/endpoint")
 DB_PORT=$(get_ssm_parameter "/oficina/$ENV/db/port")
 DB_NAME=$(get_ssm_parameter "/oficina/$ENV/db/name")
 DB_USER=$(get_ssm_parameter "/oficina/$ENV/db/username")
-DB_PASSWORD=$(get_secret "oficina/$ENV/db-password")
+DB_PASSWORD=$(get_secret "/oficina/$ENV/db-password")
 
 # Valida se todos os valores foram obtidos
 if [[ -z "$DB_ENDPOINT" || -z "$DB_PORT" || -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASSWORD" ]]; then
