@@ -125,21 +125,21 @@ Consumidos pelos outros repositórios do grupo (`oficina-infra-k8s` para a VPC; 
 
 **Parameter Store** (`{env}` = `homolog` ou `prod`):
 ```
-/oficina/{env}/network/vpc-id              → consumido por oficina-infra-k8s (P3)
-/oficina/{env}/network/vpc-cidr            → consumido por oficina-infra-k8s (P3)
-/oficina/{env}/network/public-subnet-ids   → consumido por oficina-infra-k8s (P3)
-/oficina/{env}/network/private-subnet-ids  → consumido por oficina-infra-k8s (P3)
-/oficina/{env}/db/endpoint                 → consumido por oficina-mecanica-api (P1)
-/oficina/{env}/db/port                     → consumido por oficina-mecanica-api (P1)
-/oficina/{env}/db/name                     → consumido por oficina-mecanica-api (P1)
-/oficina/{env}/db/username                 → consumido por oficina-mecanica-api (P1)
-/oficina/{env}/db/security-group-id        → consumido por oficina-mecanica-api (P1) / oficina-infra-k8s (P3)
+/oficina/{env}/network/vpc-id              → consumido por oficina-infra-k8s
+/oficina/{env}/network/vpc-cidr            → consumido por oficina-infra-k8s
+/oficina/{env}/network/public-subnet-ids   → consumido por oficina-infra-k8s
+/oficina/{env}/network/private-subnet-ids  → consumido por oficina-infra-k8s
+/oficina/{env}/db/endpoint                 → consumido por oficina-mecanica-api
+/oficina/{env}/db/port                     → consumido por oficina-mecanica-api
+/oficina/{env}/db/name                     → consumido por oficina-mecanica-api
+/oficina/{env}/db/username                 → consumido por oficina-mecanica-api
+/oficina/{env}/db/security-group-id        → consumido por oficina-mecanica-api / oficina-infra-k8s
 ```
 
 **Secrets Manager:**
 ```
-oficina/{env}/db-password       → consumido por oficina-mecanica-api (P1)
-oficina/{env}/jwt-secret-key    → consumido por oficina-mecanica-api (P1) e oficina-lambda-auth (P2)
+oficina/{env}/db-password       → consumido por oficina-mecanica-api
+oficina/{env}/jwt-secret-key    → consumido por oficina-mecanica-api e oficina-lambda-auth
 ```
 
 ## Como fazer destroy (⚠️ importante para o budget)
@@ -163,11 +163,9 @@ Custo estimado por sessão de 4h com rotina disciplinada: ~US$ 0,25 (NAT Gateway
 
 Este repositório é a infraestrutura base compartilhada e destrava os outros três repositórios do grupo:
 
-- [`oficina-mecanica-api`](../oficina-mecanica-api) — API .NET — consome DB e JWT.
-- [`oficina-lambda-auth`](../oficina-lambda-auth) — Lambda de autenticação por CPF — consome JWT.
-- [`oficina-infra-k8s`](../oficina-infra-k8s) — Cluster EKS e manifestos Kubernetes — consome a VPC.
-
-> Ajuste os links acima para as URLs reais do GitHub assim que os repositórios estiverem publicados.
+- [`oficina-mecanica-api`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-mecanica-api) — API .NET — consome DB e JWT.
+- [`oficina-lambda-auth`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-lambda-auth) — Lambda de autenticação por CPF — consome JWT.
+- [`oficina-infra-k8s`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-infra-k8s) — Cluster EKS e manifestos Kubernetes — consome a VPC.
 
 ## Estrutura do projeto
 
