@@ -49,14 +49,13 @@ jobs:
       - name: Checkout API repository
         uses: actions/checkout@v4
         with:
-          # Ajuste para o nome real da org/repo caso seja diferente
-          repository: Tech-Challenge-Oficina-Mecanica-SOAT/oficina-mecanica-api
-          path: ../oficina-mecanica-api
+          repository: Tech-Challenge-Oficina-Mecanica-SOAT/oficina-mecanica
+          path: ../oficina-mecanica
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore dependencies
         run: |
-          cd ../oficina-mecanica-api
+          cd ../oficina-mecanica
           dotnet restore src/OficinaMecanica.Infrastructure/OficinaMecanica.Infrastructure.csproj
 
       - name: Run migrations
@@ -64,7 +63,7 @@ jobs:
           ENVIRONMENT: ${{ github.event.inputs.environment || 'homolog' }}
         run: |
           chmod +x migrations/run-migrations.sh
-          ./migrations/run-migrations.sh $ENVIRONMENT ../oficina-mecanica-api
+          ./migrations/run-migrations.sh $ENVIRONMENT ../oficina-mecanica
 
       - name: Notify on failure
         if: failure()

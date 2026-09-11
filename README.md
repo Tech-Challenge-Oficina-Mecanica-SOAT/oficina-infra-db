@@ -69,8 +69,8 @@ Isso cria o bucket S3 `oficina-infra-db-terraform-state` (versionado e criptogra
 
 ## Ambientes
 
-- **homolog:** ambiente principal para testes. Configuração em [envs/homolog/main.tf](envs/homolog/main.tf#L1).
-- **prod:** cópia equivalente. Configuração em [envs/prod/main.tf](envs/prod/main.tf#L1).
+- **homolog:** ambiente principal para testes. Configuração em [envs/homolog/main.tf](envs/homolog/main.tf#L1). **É o único ambiente de fato aplicado e testado até agora** — todo o histórico de validação deste projeto (testes de infraestrutura, integração entre repositórios, demonstração funcional) foi feito em `homolog`.
+- **prod:** mesmo código do `homolog` (só muda a variável `environment`), em [envs/prod/main.tf](envs/prod/main.tf#L1). Pronto para aplicar, mas **nunca foi provisionado** — não há `state` nem recursos reais criados em `prod` em nenhuma conta até o momento.
 
 ## Como rodar
 
@@ -98,7 +98,7 @@ terraform apply
 
 - **Plan (automático):** abra um PR para `main` ou `homolog`; o workflow `plan` valida os arquivos Terraform dos dois ambientes.
 - **Apply (manual):** vá em `Actions → Terraform Apply → Run workflow`, escolha o ambiente (`homolog` ou `prod`) e garanta que os secrets AWS estejam válidos no momento da execução.
-- **Migrations (manual ou automático):** dispare manualmente em `Actions → Run Database Migrations → Run workflow`, ou deixe rodar automaticamente ao dar push em `migrations/**`. Requer que o repositório `oficina-mecanica-api` esteja acessível (o workflow faz checkout dele automaticamente).
+- **Migrations (manual ou automático):** dispare manualmente em `Actions → Run Database Migrations → Run workflow`, ou deixe rodar automaticamente ao dar push em `migrations/**`. Requer que o repositório `oficina-mecanica` esteja acessível (o workflow faz checkout dele automaticamente). **Atenção:** o runner do GitHub Actions roda fora da VPC, assim como uma máquina local — o Security Group do RDS (seção "Migrations (EF Core)" abaixo) precisa estar temporariamente aberto para o range de IPs do runner no momento da execução, ou a conexão trava em timeout. Na prática, disparar esse workflow sem preparo prévio da rede não funciona; validado que o restante da cadeia (checkout, credenciais, connection string) está correto, mas a barreira de rede é a mesma da opção local.
 
 ## Migrations (EF Core)
 
@@ -114,14 +114,14 @@ Uso recomendado (local, opção 1 acima):
 ```bash
 # 1. Renove as credenciais AWS Academy (veja seção acima) e exporte-as no terminal
 # 2. Rode o script apontando para o ambiente e o caminho local do repositório da API
-./migrations/run-migrations.sh homolog ../oficina-mecanica-api
+./migrations/run-migrations.sh homolog ../oficina-mecanica
 ```
 
 Também é possível rodar via GitHub Actions — veja o workflow `migrations.yml` na seção de CI/CD acima. Nesse caso o runner precisa do .NET SDK (já configurado no workflow) e das mesmas credenciais AWS de curta duração.
 
 ## Contratos publicados
 
-Consumidos pelos outros repositórios do grupo (`oficina-infra-k8s` para a VPC; `oficina-mecanica-api` e `oficina-lambda-auth` para o DB e o JWT):
+Consumidos pelos outros repositórios do grupo (`oficina-infra-k8s` para a VPC; `oficina-mecanica` e `oficina-lambda-auth` para o DB e o JWT):
 
 **Parameter Store** (`{env}` = `homolog` ou `prod`):
 ```
@@ -129,17 +129,17 @@ Consumidos pelos outros repositórios do grupo (`oficina-infra-k8s` para a VPC; 
 /oficina/{env}/network/vpc-cidr            → consumido por oficina-infra-k8s
 /oficina/{env}/network/public-subnet-ids   → consumido por oficina-infra-k8s
 /oficina/{env}/network/private-subnet-ids  → consumido por oficina-infra-k8s
-/oficina/{env}/db/endpoint                 → consumido por oficina-mecanica-api
-/oficina/{env}/db/port                     → consumido por oficina-mecanica-api
-/oficina/{env}/db/name                     → consumido por oficina-mecanica-api
-/oficina/{env}/db/username                 → consumido por oficina-mecanica-api
-/oficina/{env}/db/security-group-id        → consumido por oficina-mecanica-api / oficina-infra-k8s
+/oficina/{env}/db/endpoint                 → consumido por oficina-mecanica (via Secret K8s) e oficina-lambda-auth
+/oficina/{env}/db/port                     → consumido por oficina-mecanica (via Secret K8s) e oficina-lambda-auth
+/oficina/{env}/db/name                     → consumido por oficina-mecanica (via Secret K8s) e oficina-lambda-auth
+/oficina/{env}/db/username                 → consumido por oficina-mecanica (via Secret K8s) e oficina-lambda-auth
+/oficina/{env}/db/security-group-id        → consumido por oficina-infra-k8s (regra SG-to-SG) e oficina-lambda-auth (VPC Link)
 ```
 
 **Secrets Manager:**
 ```
-oficina/{env}/db-password       → consumido por oficina-mecanica-api
-oficina/{env}/jwt-secret-key    → consumido por oficina-mecanica-api e oficina-lambda-auth
+oficina/{env}/db-password       → consumido por oficina-mecanica (via Secret K8s) e oficina-lambda-auth
+oficina/{env}/jwt-secret-key    → consumido por oficina-mecanica (via Secret K8s) e oficina-lambda-auth (mesma chave assina e valida o JWT nos dois lados)
 ```
 
 ## Como fazer destroy (⚠️ importante para o budget)
@@ -163,7 +163,7 @@ Custo estimado por sessão de 4h com rotina disciplinada: ~US$ 0,25 (NAT Gateway
 
 Este repositório é a infraestrutura base compartilhada e destrava os outros três repositórios do grupo:
 
-- [`oficina-mecanica-api`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-mecanica-api) — API .NET — consome DB e JWT.
+- [`oficina-mecanica`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-mecanica) — API .NET — consome DB e JWT.
 - [`oficina-lambda-auth`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-lambda-auth) — Lambda de autenticação por CPF — consome JWT.
 - [`oficina-infra-k8s`](https://github.com/Tech-Challenge-Oficina-Mecanica-SOAT/oficina-infra-k8s) — Cluster EKS e manifestos Kubernetes — consome a VPC.
 

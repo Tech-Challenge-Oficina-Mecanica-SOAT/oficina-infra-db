@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Parâmetros
 ENV=${1:-homolog}
-API_REPO_PATH=${2:-../oficina-mecanica-api}
+API_REPO_PATH=${2:-../oficina-mecanica}
 
 # Cores para output
 RED='\033[0;31m'
@@ -40,7 +40,7 @@ DB_ENDPOINT=$(get_ssm_parameter "/oficina/$ENV/db/endpoint")
 DB_PORT=$(get_ssm_parameter "/oficina/$ENV/db/port")
 DB_NAME=$(get_ssm_parameter "/oficina/$ENV/db/name")
 DB_USER=$(get_ssm_parameter "/oficina/$ENV/db/username")
-DB_PASSWORD=$(get_secret "/oficina/$ENV/db-password")
+DB_PASSWORD=$(get_secret "oficina/$ENV/db-password")
 
 # Valida se todos os valores foram obtidos
 if [[ -z "$DB_ENDPOINT" || -z "$DB_PORT" || -z "$DB_NAME" || -z "$DB_USER" || -z "$DB_PASSWORD" ]]; then
@@ -67,7 +67,14 @@ fi
 
 # Configura a connection string de forma segura
 # Usa uma variável temporária que não aparece nos logs
-export ConnectionStrings__DefaultConnection="Host=$DB_ENDPOINT;Port=$DB_PORT;Database=$DB_NAME;Username=$DB_USER;Password=$DB_PASSWORD;Trust Server Certificate=true"
+#
+# DEFAULT_CONNECTION (sem prefixo) é o que o DesignTimeDbContextFactory do
+# oficina-mecanica realmente le (usado só por "dotnet ef", não pela API em
+# runtime, que le ConnectionStrings__DefaultConnection via IConfiguration
+# normal) - sem essa variável exportada, "dotnet ef database update" cai
+# no fallback hardcoded (localhost/postgres) do factory, silenciosamente.
+export DEFAULT_CONNECTION="Host=$DB_ENDPOINT;Port=$DB_PORT;Database=$DB_NAME;Username=$DB_USER;Password=$DB_PASSWORD;Trust Server Certificate=true"
+export ConnectionStrings__DefaultConnection="$DEFAULT_CONNECTION"
 
 echo -e "${YELLOW}🔄 Aplicando migrations...${NC}"
 
